@@ -1,12 +1,12 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://potehernjpuqwzdmtdwz.supabase.co'
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
 
 const useRuntimeCheck = typeof import.meta !== 'undefined' && import.meta.env?.DEV
 
-if (useRuntimeCheck && (!supabaseUrl || !supabaseAnonKey)) {
-  throw new Error('Faltan variables de entorno: VITE_SUPABISE_URL y VITE_SUPABISE_ANON_KEY')
+if (useRuntimeCheck && !supabaseAnonKey) {
+  console.warn('⚠️ VITE_SUPABASE_ANON_KEY no configurada. Algunas funciones pueden fallar.')
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)

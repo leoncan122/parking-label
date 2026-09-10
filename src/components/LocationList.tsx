@@ -74,7 +74,7 @@ export default function LocationList({ locations, onDelete }: LocationListProps)
                       onClick={() => onDelete(location.id)}
                       className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs rounded-lg transition"
                     >
-                      ¿Eliminar?
+                      Sí
                     </button>
                     <button
                       onClick={() => setConfirmDelete(null)}
@@ -86,7 +86,7 @@ export default function LocationList({ locations, onDelete }: LocationListProps)
                 ) : (
                   <button
                     onClick={() => setConfirmDelete(location.id)}
-                    className="p-2 text-red-400 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition"
+                    className="p-2 text-red-400 hover:bg-red-50 rounded-lg hover:text-red-600 transition"
                     title="Eliminar"
                   >
                     <Trash2 className="w-5 h-5" />

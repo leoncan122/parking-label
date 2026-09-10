@@ -109,21 +109,7 @@ export default function App() {
             </button>
           </div>
         ) : (
-          <>
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-slate-800">
-                📋 Ubicaciones guardadas ({locations.length})
-              </h2>
-              <button
-                onClick={() => setWizardOpen(true)}
-                className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-xl transition text-sm"
-              >
-                <Plus className="w-4 h-4" />
-                Agregar
-              </button>
-            </div>
-            <LocationList locations={locations} onDelete={handleDelete} />
-          </>
+          <LocationList locations={locations} onDelete={handleDelete} />
         )}
       </main>
 

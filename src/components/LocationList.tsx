@@ -6,13 +6,14 @@ import { MapPin, Trash2, Navigation } from 'lucide-react'
 interface LocationListProps {
   locations: ParkingLocation[]
   onDelete: (id: string) => void
+  onDeleteAll?: () => void
 }
 
 function getLabelInfo(value: string) {
   return VEHICLE_LABELS.find((l) => l.value === value) || VEHICLE_LABELS[VEHICLE_LABELS.length - 1]
 }
 
-export default function LocationList({ locations, onDelete }: LocationListProps) {
+export default function LocationList({ locations, onDelete, onDeleteAll }: LocationListProps) {
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
 
   if (locations.length === 0) {
@@ -27,9 +28,18 @@ export default function LocationList({ locations, onDelete }: LocationListProps)
 
   return (
     <div className="space-y-3">
-      <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-        📋 Ubicaciones guardadas ({locations.length})
-      </h2>
+      {locations.length >= 2 && onDeleteAll && (
+        <button
+          onClick={() => {
+            if (window.confirm('¿Eliminar TODAS las ubicaciones? Esta acción no se puede deshacer.')) {
+              onDeleteAll()
+            }
+          }}
+          className="text-sm text-red-400 hover:text-red-600 hover:underline transition mb-2"
+        >
+          🗑 Eliminar todo
+        </button>
+      )}
       {locations
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
         .map((location) => {

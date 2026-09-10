@@ -64,6 +64,22 @@ export default function App() {
     }
   }
 
+  const handleDeleteAll = async () => {
+    if (!user || locations.length === 0) return
+
+    try {
+      const { error } = await supabase
+        .from('parking_locations')
+        .delete()
+        .eq('user_id', user.id)
+
+      if (error) throw error
+      setLocations([])
+    } catch (err) {
+      console.error('Error deleting all locations:', err)
+    }
+  }
+
   const handleLogout = async () => {
     await supabase.auth.signOut()
     setUser(null)
@@ -109,7 +125,7 @@ export default function App() {
             </button>
           </div>
         ) : (
-          <LocationList locations={locations} onDelete={handleDelete} />
+          <LocationList locations={locations} onDelete={handleDelete} onDeleteAll={handleDeleteAll} />
         )}
       </main>
 

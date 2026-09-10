@@ -2,16 +2,14 @@ import { useState } from 'react'
 import { supabase } from './lib/supabase'
 import type { ParkingLocation } from './lib/supabase'
 import AuthScreen from './components/AuthScreen'
-import LocationPicker from './components/LocationPicker'
-import VehicleLabelSelector from './components/VehicleLabelSelector'
 import LocationList from './components/LocationList'
+import AddLocationWizard from './components/AddLocationWizard'
+import { MapPin, Plus } from 'lucide-react'
 
 export default function App() {
   const [user, setUser] = useState<any>(null)
   const [locations, setLocations] = useState<ParkingLocation[]>([])
-  const [selectedLocation, setSelectedLocation] = useState<{ lat: number; lng: number } | null>(null)
-  const [selectedLabel, setSelectedLabel] = useState<string>('')
-  const [saving, setSaving] = useState(false)
+  const [wizardOpen, setWizardOpen] = useState(false)
 
   const checkSession = async () => {
     const { data } = await supabase.auth.getSession()
@@ -36,27 +34,22 @@ export default function App() {
     }
   }
 
-  const handleSaveLocation = async () => {
-    if (!selectedLocation || !selectedLabel || !user) return
+  const handleSaveLocation = async (lat: number, lng: number, label: string) => {
+    if (!user) return
 
-    setSaving(true)
     try {
       const { error } = await supabase.from('parking_locations').insert({
         user_id: user.id,
-        latitude: selectedLocation.lat,
-        longitude: selectedLocation.lng,
-        label: selectedLabel,
+        latitude: lat,
+        longitude: lng,
+        label: label,
       })
 
       if (error) throw error
 
       await fetchLocations(user.id)
-      setSelectedLocation(null)
-      setSelectedLabel('')
     } catch (err) {
       console.error('Error saving location:', err)
-    } finally {
-      setSaving(false)
     }
   }
 
@@ -99,37 +92,48 @@ export default function App() {
       </header>
 
       <main className="max-w-2xl mx-auto px-4 pt-6 space-y-6">
-        <LocationPicker
-          onLocationSelected={(lat, lng) => setSelectedLocation({ lat, lng })}
-        />
-
-        <VehicleLabelSelector onSelect={setSelectedLabel} />
-
-        {selectedLocation && selectedLabel && (
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-            <p className="text-sm text-blue-800 font-medium mb-2">
-              Resumen:
+        {/* Empty state or locations */}
+        {locations.length === 0 ? (
+          <div className="bg-white rounded-2xl p-8 shadow-xl border border-slate-100 text-center">
+            <MapPin className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-slate-600">Sin ubicaciones guardadas</h3>
+            <p className="text-slate-400 text-sm mt-2 mb-6">
+              Agrega tu primera ubicación para recordar dónde estacionaste tu vehículo
             </p>
+            <button
+              onClick={() => setWizardOpen(true)}
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold px-8 py-4 rounded-xl transition shadow-lg shadow-blue-200"
+            >
+              <Plus className="w-5 h-5" />
+              Agregar vehículo
+            </button>
+          </div>
+        ) : (
+          <>
             <div className="flex items-center justify-between">
-              <span className="text-blue-700">
-                🏷️ {selectedLabel} — 📍 ({selectedLocation.lat.toFixed(4)}, {selectedLocation.lng.toFixed(4)})
-              </span>
+              <h2 className="text-lg font-semibold text-slate-800">
+                📋 Ubicaciones guardadas ({locations.length})
+              </h2>
               <button
-                onClick={handleSaveLocation}
-                disabled={saving}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg transition disabled:opacity-50"
+                onClick={() => setWizardOpen(true)}
+                className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-xl transition text-sm"
               >
-                {saving ? 'Guardando...' : 'Guardar ubicación'}
+                <Plus className="w-4 h-4" />
+                Agregar
               </button>
             </div>
-          </div>
+            <LocationList locations={locations} onDelete={handleDelete} />
+          </>
         )}
-
-        <LocationList
-          locations={locations}
-          onDelete={handleDelete}
-        />
       </main>
+
+      {/* Wizard Modal */}
+      {wizardOpen && (
+        <AddLocationWizard
+          onClose={() => setWizardOpen(false)}
+          onSave={handleSaveLocation}
+        />
+      )}
     </div>
   )
 }

@@ -4,7 +4,7 @@ import type { ParkingLocation } from './lib/supabase'
 import AuthScreen from './components/AuthScreen'
 import LocationList from './components/LocationList'
 import AddLocationWizard from './components/AddLocationWizard'
-import { MapPin, Plus, LogOut, ArrowUpRight, Trash2 } from 'lucide-react'
+import { MapPin, Plus, LogOut } from 'lucide-react'
 
 export default function App() {
   const [user, setUser] = useState<any>(null)

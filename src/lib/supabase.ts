@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-const useRuntimeCheck = typeof process !== 'undefined' && process.env.NODE_ENV === 'development'
+const useRuntimeCheck = typeof import.meta !== 'undefined' && import.meta.env?.DEV
 
 if (useRuntimeCheck && (!supabaseUrl || !supabaseAnonKey)) {
   throw new Error('Faltan variables de entorno: VITE_SUPABISE_URL y VITE_SUPABISE_ANON_KEY')

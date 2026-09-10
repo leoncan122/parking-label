@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { LogOut } from 'lucide-react'
 
 interface AuthScreenProps {
   onLogin: () => void

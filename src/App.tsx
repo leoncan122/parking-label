@@ -11,7 +11,6 @@ export default function App() {
   const [locations, setLocations] = useState<ParkingLocation[]>([])
   const [selectedLocation, setSelectedLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [selectedLabel, setSelectedLabel] = useState<string>('')
-  const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
 
   const checkSession = async () => {
@@ -23,7 +22,6 @@ export default function App() {
   }
 
   const fetchLocations = async (userId: string) => {
-    setLoading(true)
     try {
       const { data, error } = await supabase
         .from('parking_locations')
@@ -35,8 +33,6 @@ export default function App() {
       setLocations(data || [])
     } catch (err) {
       console.error('Error fetching locations:', err)
-    } finally {
-      setLoading(false)
     }
   }
 

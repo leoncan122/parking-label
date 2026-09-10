@@ -12,7 +12,7 @@ export default function VehicleLabelSelector({ onSelect }: VehicleLabelSelectorP
     <div className="bg-white rounded-2xl p-4 shadow-xl border border-slate-100">
       <h2 className="text-lg font-semibold text-slate-800 mb-4">Tipo de vehículo</h2>
       <div className="grid grid-cols-2 gap-3">
-        {VEHICLE_LABELS.map(({ value, label, color }) => (
+        {VEHICLE_LABELS.map(({ value, label }) => (
           <button
             key={value}
             onClick={() => {

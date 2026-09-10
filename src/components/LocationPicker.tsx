@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react'
-import { MapPin, LocateFixed, Map } from 'lucide-react'
+import { useState, useCallback } from 'react'
+import { MapPin, LocateFixed } from 'lucide-react'
 
 interface LocationPickerProps {
   onLocationSelected: (lat: number, lng: number) => void

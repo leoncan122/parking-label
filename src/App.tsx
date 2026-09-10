@@ -4,7 +4,7 @@ import type { ParkingLocation } from './lib/supabase'
 import AuthScreen from './components/AuthScreen'
 import LocationList from './components/LocationList'
 import AddLocationWizard from './components/AddLocationWizard'
-import { MapPin, Plus } from 'lucide-react'
+import { MapPin, Plus, LogOut, ArrowUpRight, Trash2 } from 'lucide-react'
 
 export default function App() {
   const [user, setUser] = useState<any>(null)
@@ -91,41 +91,64 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 pb-8">
-      <header className="bg-white shadow-sm border-b border-slate-200">
-        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
+    <div className="min-h-screen bg-slate-50 pb-8">
+      {/* Header */}
+      <header className="bg-white sticky top-0 z-10 shadow-sm border-b border-slate-100">
+        <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-2xl">🅿️</span>
-            <h1 className="text-xl font-bold text-slate-800">ParkIt</h1>
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+              <span className="text-white text-sm font-bold">P</span>
+            </div>
+            <h1 className="text-lg font-bold text-slate-800">ParkIt</h1>
           </div>
           <button
             onClick={handleLogout}
-            className="text-sm text-slate-500 hover:text-red-500 transition flex items-center gap-1"
+            className="text-xs text-slate-400 hover:text-red-500 transition flex items-center gap-1"
           >
+            <LogOut className="w-3.5 h-3.5" />
             Cerrar sesión
           </button>
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 pt-6 space-y-6">
-        {/* Empty state or locations */}
+      <main className="max-w-lg mx-auto px-4 pt-4">
+        {/* Empty state */}
         {locations.length === 0 ? (
-          <div className="bg-white rounded-2xl p-8 shadow-xl border border-slate-100 text-center">
-            <MapPin className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-slate-600">Sin ubicaciones guardadas</h3>
-            <p className="text-slate-400 text-sm mt-2 mb-6">
-              Agrega tu primera ubicación para recordar dónde estacionaste tu vehículo
+          <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100 text-center mt-4">
+            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <MapPin className="w-8 h-8 text-slate-300" />
+            </div>
+            <h3 className="text-base font-semibold text-slate-700 mb-1">Sin ubicaciones</h3>
+            <p className="text-slate-400 text-sm mb-6">
+              Agrega dónde estacionaste tu vehículo
             </p>
             <button
               onClick={() => setWizardOpen(true)}
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold px-8 py-4 rounded-xl transition shadow-lg shadow-blue-200"
+              className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-3 rounded-xl transition text-sm"
             >
-              <Plus className="w-5 h-5" />
+              <Plus className="w-4 h-4" />
               Agregar vehículo
             </button>
           </div>
         ) : (
-          <LocationList locations={locations} onDelete={handleDelete} onDeleteAll={handleDeleteAll} />
+          <>
+            {/* Single header for list view - only ONE instance */}
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-base font-semibold text-slate-700">
+                Tus ubicaciones
+              </h2>
+              <button
+                onClick={() => setWizardOpen(true)}
+                className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium px-3 py-2 rounded-lg transition"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Agregar
+              </button>
+            </div>
+
+            {/* Location list */}
+            <LocationList locations={locations} onDelete={handleDelete} onDeleteAll={handleDeleteAll} />
+          </>
         )}
       </main>
 

@@ -17,17 +17,12 @@ export default function LocationList({ locations, onDelete, onDeleteAll }: Locat
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
 
   if (locations.length === 0) {
-    return (
-      <div className="bg-white rounded-2xl p-8 shadow-xl border border-slate-100 text-center">
-        <MapPin className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-        <h3 className="text-lg font-semibold text-slate-600">Sin ubicaciones guardadas</h3>
-        <p className="text-slate-400 text-sm mt-1">Guarda tu primera ubicación arriba</p>
-      </div>
-    )
+    return null
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
+      {/* Delete all button */}
       {locations.length >= 2 && onDeleteAll && (
         <button
           onClick={() => {
@@ -35,11 +30,14 @@ export default function LocationList({ locations, onDelete, onDeleteAll }: Locat
               onDeleteAll()
             }
           }}
-          className="text-sm text-red-400 hover:text-red-600 hover:underline transition mb-2"
+          className="flex items-center gap-1.5 w-full text-xs text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg p-2 transition"
         >
-          🗑 Eliminar todo
+          <Trash2 className="w-3.5 h-3.5" />
+          Eliminar todo
         </button>
       )}
+
+      {/* Location cards */}
       {locations
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
         .map((location) => {
@@ -49,26 +47,28 @@ export default function LocationList({ locations, onDelete, onDeleteAll }: Locat
           return (
             <div
               key={location.id}
-              className="bg-white rounded-xl p-4 shadow-md border border-slate-100 flex items-center justify-between group hover:shadow-lg transition"
+              className="bg-white rounded-xl p-3.5 shadow-sm border border-slate-100 flex items-center gap-3"
             >
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className={`w-12 h-12 ${labelInfo.color} rounded-xl flex items-center justify-center text-white flex-shrink-0`}>
-                  <MapPin className="w-6 h-6" />
-                </div>
-                <div className="min-w-0">
-                  <p className="font-semibold text-slate-800 truncate">{labelInfo.label}</p>
-                  <p className="text-xs text-slate-500">
-                    {date.toLocaleDateString('es-ES', {
-                      day: '2-digit',
-                      month: 'short',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </p>
-                </div>
+              {/* Icon */}
+              <div className={`w-10 h-10 ${labelInfo.color} rounded-lg flex items-center justify-center text-white flex-shrink-0`}>
+                <MapPin className="w-5 h-5" />
               </div>
 
-              <div className="flex items-center gap-2">
+              {/* Info */}
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-slate-800 text-sm">{labelInfo.label}</p>
+                <p className="text-xs text-slate-400">
+                  {date.toLocaleDateString('es-ES', {
+                    day: '2-digit',
+                    month: 'short',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </p>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center gap-1">
                 <a
                   href={`https://www.google.com/maps?q=${location.latitude},${location.longitude}`}
                   target="_blank"
@@ -76,19 +76,20 @@ export default function LocationList({ locations, onDelete, onDeleteAll }: Locat
                   className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition"
                   title="Abrir en Google Maps"
                 >
-                  <Navigation className="w-5 h-5" />
+                  <Navigation className="w-4.5 h-4.5" />
                 </a>
+
                 {confirmDelete === location.id ? (
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => onDelete(location.id)}
-                      className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs rounded-lg transition"
+                      className="px-2.5 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs rounded-lg transition font-medium"
                     >
                       Sí
                     </button>
                     <button
                       onClick={() => setConfirmDelete(null)}
-                      className="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs rounded-lg transition"
+                      className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs rounded-lg transition font-medium"
                     >
                       No
                     </button>
@@ -96,10 +97,10 @@ export default function LocationList({ locations, onDelete, onDeleteAll }: Locat
                 ) : (
                   <button
                     onClick={() => setConfirmDelete(location.id)}
-                    className="p-2 text-red-400 hover:bg-red-50 rounded-lg hover:text-red-600 transition"
+                    className="p-2 text-red-300 hover:bg-red-50 hover:text-red-500 rounded-lg transition"
                     title="Eliminar"
                   >
-                    <Trash2 className="w-5 h-5" />
+                    <Trash2 className="w-4.5 h-4.5" />
                   </button>
                 )}
               </div>

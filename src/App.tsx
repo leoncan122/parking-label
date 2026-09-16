@@ -4,12 +4,14 @@ import type { ParkingLocation } from './lib/supabase'
 import AuthScreen from './components/AuthScreen'
 import LocationList from './components/LocationList'
 import AddLocationWizard from './components/AddLocationWizard'
-import { MapPin, Plus, LogOut } from 'lucide-react'
+import { MapPin, Plus, LogOut, Trash2 } from 'lucide-react'
 
 export default function App() {
   const [user, setUser] = useState<any>(null)
   const [locations, setLocations] = useState<ParkingLocation[]>([])
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [wizardOpen, setWizardOpen] = useState(false)
+  const [isSelectMode, setIsSelectMode] = useState(false)
 
   const checkSession = async () => {
     const { data } = await supabase.auth.getSession()
@@ -53,12 +55,44 @@ export default function App() {
     }
   }
 
+  const handleToggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const handleDeleteSelected = async () => {
+    if (selectedIds.size === 0) return
+    if (!confirm(`¿Eliminar ${selectedIds.size} ubicación${selectedIds.size > 1 ? 'es' : ''}?`)) return
+
+    try {
+      const { error } = await supabase
+        .from('parking_locations')
+        .delete()
+        .in('id', Array.from(selectedIds))
+
+      if (error) throw error
+      setLocations(prev => prev.filter(l => !selectedIds.has(l.id)))
+      setSelectedIds(new Set())
+    } catch (err) {
+      console.error('Error deleting selected locations:', err)
+    }
+  }
+
   const handleDelete = async (id: string) => {
     try {
       const { error } = await supabase.from('parking_locations').delete().eq('id', id)
       if (error) throw error
 
       if (user) await fetchLocations(user.id)
+      setSelectedIds(prev => {
+        const next = new Set(prev)
+        next.delete(id)
+        return next
+      })
     } catch (err) {
       console.error('Error deleting location:', err)
     }
@@ -75,6 +109,7 @@ export default function App() {
 
       if (error) throw error
       setLocations([])
+      setSelectedIds(new Set())
     } catch (err) {
       console.error('Error deleting all locations:', err)
     }
@@ -132,22 +167,64 @@ export default function App() {
           </div>
         ) : (
           <>
-            {/* Single header for list view - only ONE instance */}
+            {/* Header for list view */}
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-base font-semibold text-slate-700">
-                Tus ubicaciones
+                {isSelectMode && selectedIds.size > 0
+                  ? `${selectedIds.size} seleccionada${selectedIds.size !== 1 ? 's' : ''}`
+                  : 'Tus ubicaciones'}
               </h2>
-              <button
-                onClick={() => setWizardOpen(true)}
-                className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium px-3 py-2 rounded-lg transition"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                Agregar
-              </button>
+              <div className="flex items-center gap-2">
+                {isSelectMode ? (
+                  <>
+                    {selectedIds.size > 0 && (
+                      <button
+                        onClick={handleDeleteSelected}
+                        className="inline-flex items-center gap-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-semibold px-3 py-2 rounded-lg transition"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        Eliminar ({selectedIds.size})
+                      </button>
+                    )}
+                    <button
+                      onClick={() => {
+                        setIsSelectMode(false)
+                        setSelectedIds(new Set())
+                      }}
+                      className="inline-flex items-center gap-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-medium px-3 py-2 rounded-lg transition"
+                    >
+                      Listo
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => setIsSelectMode(true)}
+                      className="inline-flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-medium px-3 py-2 rounded-lg transition"
+                    >
+                      Seleccionar
+                    </button>
+                    <button
+                      onClick={() => setWizardOpen(true)}
+                      className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium px-3 py-2 rounded-lg transition"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      Agregar
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
 
             {/* Location list */}
-            <LocationList locations={locations} onDelete={handleDelete} onDeleteAll={handleDeleteAll} />
+            <LocationList 
+              locations={locations} 
+              onDelete={handleDelete} 
+              onDeleteAll={handleDeleteAll}
+              isSelectMode={isSelectMode}
+              selectedIds={selectedIds}
+              onToggleSelect={handleToggleSelect}
+            />
           </>
         )}
       </main>

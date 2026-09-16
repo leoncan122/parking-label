@@ -1,138 +1,150 @@
-import { useState, useCallback } from 'react'
-import { MapPin, LocateFixed } from 'lucide-react'
+import { useEffect, useRef, useState, useCallback } from 'react'
+import 'leaflet/dist/leaflet.css'
+import L from 'leaflet'
+import { LocateFixed } from 'lucide-react'
+
+// Fix Leaflet default marker icons
+delete (L.Icon.Default.prototype as any)._getIconUrl
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+})
 
 interface LocationPickerProps {
   onLocationSelected: (lat: number, lng: number) => void
 }
 
 export default function LocationPicker({ onLocationSelected }: LocationPickerProps) {
-  const [position, setPosition] = useState<{ lat: number; lng: number } | null>(null)
-  const [mapPosition, setMapPosition] = useState<{ lat: number; lng: number } | null>(null)
+  const mapContainerRef = useRef<HTMLDivElement>(null)
+  const mapRef = useRef<L.Map | null>(null)
+  const markerRef = useRef<L.Marker | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [mapMode, setMapMode] = useState(false)
-  const [mapBounds, setMapBounds] = useState({ lat: 40.4168, lng: -3.7038, zoom: 13 })
+  const [selectedLocation, setSelectedLocation] = useState<{ lat: number; lng: number } | null>(null)
 
+  const initMap = useCallback(() => {
+    if (!mapContainerRef.current || mapRef.current) return
+
+    mapRef.current = L.map(mapContainerRef.current).setView([40.4168, -3.7038], 13)
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap',
+      maxZoom: 19,
+    }).addTo(mapRef.current)
+
+    mapRef.current.on('click', (e: L.LeafletMouseEvent) => {
+      const { lat, lng } = e.latlng
+      setSelectedLocation({ lat, lng })
+
+      if (markerRef.current) {
+        markerRef.current.setLatLng([lat, lng])
+      } else {
+        markerRef.current = L.marker([lat, lng]).addTo(mapRef.current!)
+      }
+    })
+  }, [])
+
+  // Initialize map
+  useEffect(() => {
+    initMap()
+    return () => {
+      mapRef.current?.remove()
+      mapRef.current = null
+      markerRef.current = null
+    }
+  }, [initMap])
+
+  // Try to get user location
   const handleGetCurrentLocation = useCallback(() => {
     setLoading(true)
     setError('')
 
     if (!navigator.geolocation) {
-      setError('Geolocalización no soportada en este navegador')
+      setError('Geolocalización no soportada')
       setLoading(false)
       return
     }
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        const location = {
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
+        const lat = pos.coords.latitude
+        const lng = pos.coords.longitude
+        setSelectedLocation({ lat, lng })
+
+        if (mapRef.current) {
+          mapRef.current.setView([lat, lng], 16)
         }
-        setPosition(location)
-        setMapPosition(location)
-        setMapBounds((prev) => ({ ...prev, lat: location.lat, lng: location.lng }))
+
+        if (markerRef.current) {
+          markerRef.current.setLatLng([lat, lng])
+        } else {
+          markerRef.current = L.marker([lat, lng]).addTo(mapRef.current!)
+        }
         setLoading(false)
       },
       (err) => {
         setError(err.message || 'Error al obtener ubicación')
         setLoading(false)
       },
-      { enableHighAccuracy: true, timeout: 10000 }
+      { enableHighAccuracy: true, timeout: 15000 }
     )
   }, [])
 
-  const handleMapClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!mapPosition) return
-    const rect = e.currentTarget.getBoundingClientRect()
-    const x = (e.clientX - rect.left) / rect.width
-    const y = (e.clientY - rect.top) / rect.height
-    const lat = mapBounds.lat + (y - 0.5) * 0.02 * (1 / Math.cos((mapBounds.lat * Math.PI) / 180))
-    const lng = mapBounds.lng + (x - 0.5) * 0.02
-    setMapPosition({ lat, lng })
-  }
+  // Auto-detect location on mount
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const lat = pos.coords.latitude
+          const lng = pos.coords.longitude
+          setSelectedLocation({ lat, lng })
+          if (mapRef.current) {
+            mapRef.current.setView([lat, lng], 16)
+          }
+          if (!markerRef.current) {
+            markerRef.current = L.marker([lat, lng]).addTo(mapRef.current!)
+          }
+        },
+        () => {},
+        { enableHighAccuracy: true }
+      )
+    }
+  }, [])
 
   return (
-    <div className="bg-white rounded-2xl p-4 shadow-xl border border-slate-100">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-          <MapPin className="w-5 h-5 text-blue-500" />
-          Ubicación
-        </h2>
-        <button
-          onClick={() => setMapMode(!mapMode)}
-          className="text-sm bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition"
-        >
-          {mapMode ? '📍 Ubicación actual' : '🗺️ Ver mapa'}
-        </button>
-      </div>
+    <div className="space-y-3">
+      <p className="text-sm text-slate-600">
+        Toca el mapa o usa tu ubicación actual
+      </p>
 
-      {!mapMode ? (
-        <>
-          <button
-            onClick={handleGetCurrentLocation}
-            disabled={loading}
-            className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold py-4 rounded-xl transition flex items-center justify-center gap-3 disabled:opacity-50"
-          >
-            <LocateFixed className="w-5 h-5" />
-            {loading ? 'Obteniendo ubicación...' : 'Usar mi ubicación actual'}
-          </button>
+      <div
+        ref={mapContainerRef}
+        className="w-full h-72 rounded-xl border border-slate-200 overflow-hidden"
+      />
 
-          {error && (
-            <div className="mt-3 text-red-500 text-sm bg-red-50 border border-red-100 rounded-lg p-3">
-              {error}
-            </div>
-          )}
+      <button
+        onClick={handleGetCurrentLocation}
+        disabled={loading}
+        className="w-full bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium py-3 rounded-xl transition flex items-center justify-center gap-2 disabled:opacity-50 text-sm"
+      >
+        <LocateFixed className="w-4 h-4" />
+        {loading ? 'Obteniendo...' : 'Usar mi ubicación actual'}
+      </button>
 
-          {position && (
-            <div className="mt-3 bg-blue-50 border border-blue-100 rounded-lg p-3">
-              <p className="text-sm text-blue-800 font-medium">Ubicación detectada:</p>
-              <p className="text-xs text-blue-600 mt-1">
-                Lat: {position.lat.toFixed(6)} | Lng: {position.lng.toFixed(6)}
-              </p>
-              <button
-                onClick={() => onLocationSelected(position.lat, position.lng)}
-                className="mt-2 w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-sm font-medium transition"
-              >
-                Confirmar esta ubicación
-              </button>
-            </div>
-          )}
-        </>
-      ) : (
-        <div className="relative">
-          <div
-            onClick={handleMapClick}
-            className="w-full h-64 bg-slate-100 rounded-xl cursor-crosshair flex items-center justify-center relative overflow-hidden border border-slate-200"
-            style={{
-              backgroundImage: 'url(https://tile.openstreetmap.org/13/2689/3520.png)',
-              backgroundSize: 'cover',
-            }}
-          >
-            <p className="absolute bottom-2 left-2 text-xs bg-white/90 px-2 py-1 rounded text-slate-600">
-              Toca el mapa para seleccionar
-            </p>
-            {mapPosition && (
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-full">
-                <MapPin className="w-8 h-8 text-red-500 drop-shadow-lg" />
-              </div>
-            )}
-          </div>
-          {mapPosition && (
-            <div className="mt-3 bg-blue-50 border border-blue-100 rounded-lg p-3">
-              <p className="text-sm text-blue-800 font-medium">Ubicación seleccionada:</p>
-              <p className="text-xs text-blue-600 mt-1">
-                Lat: {mapPosition.lat.toFixed(6)} | Lng: {mapPosition.lng.toFixed(6)}
-              </p>
-              <button
-                onClick={() => onLocationSelected(mapPosition.lat, mapPosition.lng)}
-                className="mt-2 w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-sm font-medium transition"
-              >
-                Confirmar esta ubicación
-              </button>
-            </div>
-          )}
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3">
+          {error}
         </div>
+      )}
+
+      {selectedLocation && (
+        <button
+          onClick={() => onLocationSelected(selectedLocation.lat, selectedLocation.lng)}
+          className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-xl transition text-sm"
+        >
+          ✓ Confirmar ubicación
+        </button>
       )}
     </div>
   )

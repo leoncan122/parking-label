@@ -1,10 +1,9 @@
 import { useState } from 'react'
-import { X, Check, MapPin, ShieldCheck } from 'lucide-react'
-import { VEHICLE_LABELS } from '../lib/supabase'
+import { X, Check } from 'lucide-react'
 import LocationPicker from './LocationPicker'
 import VehicleLabelSelector from './VehicleLabelSelector'
 
-type Step = 'location' | 'vehicle' | 'confirm'
+type Step = 'location' | 'vehicle'
 
 interface AddLocationWizardProps {
   onClose: () => void
@@ -17,20 +16,7 @@ export default function AddLocationWizard({ onClose, onSave }: AddLocationWizard
   const [label, setLabel] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
-  const canProceed: Record<Step, boolean> = {
-    location: !!location,
-    vehicle: !!label,
-    confirm: !!location && !!label,
-  }
-
-  const steps: { key: Step; icon: React.ElementType; title: string }[] = [
-    { key: 'location', icon: MapPin, title: 'Ubicación' },
-    { key: 'vehicle', icon: ShieldCheck, title: 'Vehículo' },
-    { key: 'confirm', icon: ShieldCheck, title: 'Confirmar' },
-  ]
-
-  const currentIdx = steps.findIndex((s) => s.key === step)
-  const isLastStep = currentIdx === steps.length - 1
+  const canProceed = step === 'location' ? !!location : !!label
 
   const handleFinish = async () => {
     if (!location || !label) return
@@ -42,156 +28,106 @@ export default function AddLocationWizard({ onClose, onSave }: AddLocationWizard
     }
   }
 
-  const handleLocationSelected = (lat: number, lng: number) => {
-    setLocation({ lat, lng })
-  }
-
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
-      {/* Modal */}
-      <div className="relative bg-white w-full sm:rounded-2xl rounded-t-2xl max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl animate-slide-up">
+      <div className="relative bg-white w-full sm:rounded-2xl rounded-t-2xl max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between z-10">
-          <h2 className="text-lg font-bold text-slate-800">
-            Agregar vehículo
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-slate-100 rounded-lg transition"
-          >
+          <div>
+            <h2 className="text-lg font-bold text-slate-800">
+              {step === 'location' ? 'Seleccionar ubicación' : 'Tipo de vehículo'}
+            </h2>
+            <p className="text-xs text-slate-400 mt-0.5">
+              {step === 'location' ? 'Paso 1 de 2' : 'Paso 2 de 2'}
+            </p>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-lg transition">
             <X className="w-5 h-5 text-slate-500" />
           </button>
         </div>
 
-        {/* Progress bar */}
-        <div className="px-4 pt-4 pb-2">
-          <div className="flex items-center gap-2 mb-2">
-            {steps.map((s, i) => {
-              const Icon = s.icon
-              const isActive = s.key === step
-              const isCompleted = i < currentIdx
-              return (
-                <div key={s.key} className="flex items-center gap-2 flex-1">
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
-                      isCompleted
-                        ? 'bg-green-500 text-white'
-                        : isActive
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-slate-200 text-slate-400'
-                    }`}
-                  >
-                    {isCompleted ? (
-                      <Check className="w-4 h-4" />
-                    ) : (
-                      <Icon className="w-4 h-4" />
-                    )}
-                  </div>
-                  <span
-                    className={`text-xs font-medium hidden sm:block ${
-                      isActive ? 'text-blue-600' : isCompleted ? 'text-green-600' : 'text-slate-400'
-                    }`}
-                  >
-                    {s.title}
-                  </span>
-                  {i < steps.length - 1 && (
-                    <div
-                      className={`flex-1 h-1 rounded-full mx-1 ${
-                        isCompleted ? 'bg-green-300' : 'bg-slate-200'
-                      }`}
-                    />
-                  )}
-                </div>
-              )
-            })}
+        {/* Progress */}
+        <div className="px-4 py-2">
+          <div className="flex items-center gap-2">
+            <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-sm ${step === 'location' || step === 'vehicle' ? 'bg-blue-600 text-white' : 'bg-green-500 text-white'}`}>
+              1
+            </div>
+            <div className={`flex-1 h-1 rounded-full ${step === 'location' ? 'bg-blue-500' : 'bg-green-500'}`} />
+            <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-sm ${step === 'vehicle' ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-400'}`}>
+              2
+            </div>
           </div>
-          <p className="text-sm text-slate-500 mb-4">
-            Paso {currentIdx + 1} de {steps.length}: {steps[currentIdx].title}
-          </p>
         </div>
 
-        {/* Step content */}
-        <div className="px-4 py-2 space-y-4">
+        {/* Content */}
+        <div className="px-4 py-3">
           {step === 'location' && (
-            <div>
-              <p className="text-sm text-slate-600 mb-3">
-                Selecciona la ubicación donde estacionaste tu vehículo.
-              </p>
-              <LocationPicker onLocationSelected={handleLocationSelected} />
-            </div>
+            <LocationPicker onLocationSelected={(lat, lng) => { setLocation({ lat, lng }); setStep('vehicle'); }} />
           )}
 
-          {step === 'vehicle' && (
-            <div>
-              <p className="text-sm text-slate-600 mb-3">
-                Selecciona el tipo de vehículo.
-              </p>
-              <VehicleLabelSelector onSelect={setLabel} />
-            </div>
-          )}
-
-          {step === 'confirm' && location && label && (
+          {step === 'vehicle' && location && (
             <div className="space-y-4">
               {/* Location summary */}
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
-                <p className="text-sm text-slate-600 font-medium mb-1">📍 Ubicación</p>
-                <p className="text-sm text-slate-800">
-                  Lat: {location.lat.toFixed(6)} | Lng: {location.lng.toFixed(6)}
-                </p>
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 flex items-center gap-3">
+                <span className="text-xl">📍</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-blue-600 font-medium">Ubicación</p>
+                  <p className="text-sm text-blue-800 truncate">
+                    {location.lat.toFixed(5)}, {location.lng.toFixed(5)}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setStep('location')}
+                  className="text-xs text-blue-600 hover:bg-blue-100 font-medium px-2.5 py-1.5 rounded-lg transition"
+                >
+                  Cambiar
+                </button>
               </div>
 
-              {/* Vehicle summary */}
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
-                <p className="text-sm text-slate-600 font-medium mb-1">🏷️ Vehículo</p>
-                <p className="text-sm text-slate-800">
-                  {VEHICLE_LABELS.find((l) => l.value === label)?.label || label}
-                </p>
+              {/* Vehicle selector */}
+              <div>
+                <p className="text-sm font-medium text-slate-700 mb-2">¿Qué tipo de vehículo es?</p>
+                <VehicleLabelSelector onSelect={setLabel} />
               </div>
             </div>
           )}
         </div>
 
-        {/* Footer actions */}
-        <div className="sticky bottom-0 bg-white border-t border-slate-200 px-4 py-4 flex items-center justify-between gap-3">
+        {/* Footer */}
+        <div className="sticky bottom-0 bg-white border-t border-slate-200 px-4 py-3 flex items-center justify-between gap-3">
           <button
             onClick={() => {
-              if (currentIdx > 0) setStep(steps[currentIdx - 1].key)
+              if (step === 'vehicle') setStep('location')
+              else onClose()
             }}
-            disabled={currentIdx === 0}
-            className="px-4 py-3 text-slate-600 font-medium rounded-xl border border-slate-200 hover:bg-slate-50 transition disabled:opacity-30 disabled:cursor-not-allowed"
+            className="px-4 py-3 text-slate-500 font-medium text-sm rounded-xl border border-slate-200 hover:bg-slate-50 transition"
           >
-            {currentIdx === 0 ? 'Cancelar' : '← Atrás'}
+            {step === 'vehicle' ? '← Atrás' : 'Cancelar'}
           </button>
 
-          {!isLastStep ? (
-            <button
-              onClick={() => setStep(steps[currentIdx + 1].key)}
-              disabled={!canProceed[step]}
-              className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              Siguiente →
-            </button>
-          ) : (
-            <button
-              onClick={handleFinish}
-              disabled={!canProceed.confirm || saving}
-              className="flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              {saving ? (
-                <>Guardando...</>
-              ) : (
-                <>
-                  <Check className="w-5 h-5" /> Guardar ubicación
-                </>
-              )}
-            </button>
-          )}
+          <button
+            onClick={step === 'vehicle' ? handleFinish : undefined}
+            disabled={!canProceed || saving}
+            className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-semibold text-sm rounded-xl transition flex items-center justify-center gap-2"
+          >
+            {saving ? (
+              <>
+                <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                Guardando...
+              </>
+            ) : step === 'vehicle' ? (
+              <>
+                <Check className="w-4 h-4" /> Guardar
+              </>
+            ) : (
+              'Siguiente →'
+            )}
+          </button>
         </div>
       </div>
     </div>

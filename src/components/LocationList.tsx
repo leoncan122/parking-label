@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { ParkingLocation } from '../lib/supabase'
 import { VEHICLE_LABELS } from '../lib/supabase'
-import { MapPin, MoreVertical, Share2, Pencil, Trash2, ArrowUpRight } from 'lucide-react'
+import { MoreVertical, Share2, Pencil, Trash2 } from 'lucide-react'
 
 interface LocationListProps {
   locations: ParkingLocation[]
@@ -138,7 +138,7 @@ export default function LocationList({
                   </button>
                 ) : (
                   <div className={`w-10 h-10 ${labelInfo.color} rounded-lg flex items-center justify-center text-white flex-shrink-0`}>
-                    <MapPin className="w-5 h-5" />
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
                   </div>
                 )}
 
@@ -157,18 +157,18 @@ export default function LocationList({
                   </p>
                 </div>
 
-                {/* Actions - Google Maps button + Dropdown menu */}
+                {/* Actions */}
                 {!isSelectMode && (
                   <div className="flex items-center gap-1">
-                    {/* Google Maps button */}
+                    {/* Maps button with 📍 emoji */}
                     <a
                       href={`https://www.google.com/maps?q=${location.latitude},${location.longitude}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition"
+                      className="text-lg hover:scale-110 transition-transform px-1"
                       title="Abrir en Google Maps"
                     >
-                      <ArrowUpRight className="w-5 h-5" />
+                      📍
                     </a>
 
                     <div className="relative">

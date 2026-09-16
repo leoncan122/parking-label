@@ -1,13 +1,12 @@
 import { useState } from 'react'
 import type { ParkingLocation } from '../lib/supabase'
 import { VEHICLE_LABELS } from '../lib/supabase'
-import { MapPin, MoreVertical, Share2, Pencil, Trash2 } from 'lucide-react'
+import { MapPin, MoreVertical, Share2, Pencil, Trash2, ArrowUpRight } from 'lucide-react'
 
 interface LocationListProps {
   locations: ParkingLocation[]
   onDelete: (id: string) => void
   onEdit: (id: string, newLabel: string) => void
-  onShare?: (location: ParkingLocation) => void
   isSelectMode?: boolean
   selectedIds?: Set<string>
   onToggleSelect?: (id: string) => void
@@ -22,14 +21,13 @@ interface DropdownState {
   isOpen: boolean
 }
 
-export default function LocationList({ 
-  locations, 
-  onDelete, 
+export default function LocationList({
+  locations,
+  onDelete,
   onEdit,
-  onShare,
   isSelectMode = false,
   selectedIds = new Set(),
-  onToggleSelect 
+  onToggleSelect
 }: LocationListProps) {
   const [dropdown, setDropdown] = useState<DropdownState>({ locationId: '', isOpen: false })
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -44,12 +42,8 @@ export default function LocationList({
   }
 
   const handleShare = (location: ParkingLocation) => {
-    if (onShare) {
-      onShare(location)
-    } else {
-      const url = `https://www.google.com/maps?q=${location.latitude},${location.longitude}`
-      navigator.clipboard.writeText(url).then(() => {})
-    }
+    const url = `https://www.google.com/maps?q=${location.latitude},${location.longitude}`
+    navigator.clipboard.writeText(url).then(() => {})
     closeDropdown()
   }
 
@@ -163,43 +157,54 @@ export default function LocationList({
                   </p>
                 </div>
 
-                {/* Actions */}
+                {/* Actions - Google Maps button + Dropdown menu */}
                 {!isSelectMode && (
-                  <div className="relative">
-                    {/* Dropdown menu */}
-                    {activeDropdown && (
-                      <div className="absolute right-0 top-10 bg-white rounded-xl shadow-lg border border-slate-200 py-1.5 z-20 min-w-[160px]">
-                        <button
-                          onClick={() => handleShare(location)}
-                          className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition"
-                        >
-                          <Share2 className="w-4 h-4 text-blue-500" />
-                          Compartir
-                        </button>
-                        <button
-                          onClick={() => handleEdit(location)}
-                          className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition"
-                        >
-                          <Pencil className="w-4 h-4 text-amber-500" />
-                          Editar
-                        </button>
-                        <button
-                          onClick={() => handleDelete(location.id)}
-                          className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-red-600 hover:bg-red-50 transition"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                          Eliminar
-                        </button>
-                      </div>
-                    )}
-
-                    {/* Menu trigger */}
-                    <button
-                      onClick={() => activeDropdown ? closeDropdown() : openDropdown(location.id)}
-                      className="p-2 text-slate-400 hover:bg-slate-50 hover:text-slate-600 rounded-lg transition"
+                  <div className="flex items-center gap-1">
+                    {/* Google Maps button */}
+                    <a
+                      href={`https://www.google.com/maps?q=${location.latitude},${location.longitude}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition"
+                      title="Abrir en Google Maps"
                     >
-                      <MoreVertical className="w-5 h-5" />
-                    </button>
+                      <ArrowUpRight className="w-5 h-5" />
+                    </a>
+
+                    <div className="relative">
+                      {activeDropdown && (
+                        <div className="absolute right-0 top-10 bg-white rounded-xl shadow-lg border border-slate-200 py-1.5 z-20 min-w-[160px]">
+                          <button
+                            onClick={() => handleShare(location)}
+                            className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition"
+                          >
+                            <Share2 className="w-4 h-4 text-blue-500" />
+                            Compartir
+                          </button>
+                          <button
+                            onClick={() => handleEdit(location)}
+                            className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition"
+                          >
+                            <Pencil className="w-4 h-4 text-amber-500" />
+                            Editar
+                          </button>
+                          <button
+                            onClick={() => handleDelete(location.id)}
+                            className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-red-600 hover:bg-red-50 transition"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            Eliminar
+                          </button>
+                        </div>
+                      )}
+
+                      <button
+                        onClick={() => activeDropdown ? closeDropdown() : openDropdown(location.id)}
+                        className="p-2 text-slate-400 hover:bg-slate-50 hover:text-slate-600 rounded-lg transition"
+                      >
+                        <MoreVertical className="w-5 h-5" />
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>

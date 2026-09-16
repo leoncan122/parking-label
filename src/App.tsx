@@ -13,6 +13,10 @@ export default function App() {
   const [wizardOpen, setWizardOpen] = useState(false)
   const [isSelectMode, setIsSelectMode] = useState(false)
 
+  // Delete confirmation state
+  const [deleteTarget, setDeleteTarget] = useState<'single' | 'bulk' | null>(null)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
+
   const checkSession = async () => {
     const { data } = await supabase.auth.getSession()
     if (data.session) {
@@ -64,54 +68,65 @@ export default function App() {
     })
   }
 
-  const handleDeleteSelected = async () => {
-    if (selectedIds.size === 0) return
-    if (!confirm(`¿Eliminar ${selectedIds.size} ubicación${selectedIds.size > 1 ? 'es' : ''}?`)) return
+  const openDeleteConfirm = (id: string) => {
+    setDeleteTarget('single')
+    setDeleteId(id)
+  }
 
+  const openBulkDeleteConfirm = () => {
+    setDeleteTarget('bulk')
+    setDeleteId(null)
+  }
+
+  const executeDelete = async () => {
+    if (deleteTarget === 'single' && deleteId) {
+      try {
+        const { error } = await supabase
+          .from('parking_locations')
+          .delete()
+          .eq('id', deleteId)
+
+        if (error) throw error
+        await fetchLocations(user.id)
+      } catch (err) {
+        console.error('Error deleting location:', err)
+      }
+    } else if (deleteTarget === 'bulk') {
+      try {
+        const { error } = await supabase
+          .from('parking_locations')
+          .delete()
+          .in('id', Array.from(selectedIds))
+
+        if (error) throw error
+        await fetchLocations(user.id)
+        setSelectedIds(new Set())
+      } catch (err) {
+        console.error('Error deleting selected locations:', err)
+      }
+    }
+
+    setDeleteTarget(null)
+    setDeleteId(null)
+  }
+
+  const cancelDelete = () => {
+    setDeleteTarget(null)
+    setDeleteId(null)
+  }
+
+  const handleEdit = async (id: string, newLabel: string) => {
     try {
       const { error } = await supabase
         .from('parking_locations')
-        .delete()
-        .in('id', Array.from(selectedIds))
+        .update({ label: newLabel })
+        .eq('id', id)
 
       if (error) throw error
-      setLocations(prev => prev.filter(l => !selectedIds.has(l.id)))
-      setSelectedIds(new Set())
+
+      await fetchLocations(user.id)
     } catch (err) {
-      console.error('Error deleting selected locations:', err)
-    }
-  }
-
-  const handleDelete = async (id: string) => {
-    try {
-      const { error } = await supabase.from('parking_locations').delete().eq('id', id)
-      if (error) throw error
-
-      if (user) await fetchLocations(user.id)
-      setSelectedIds(prev => {
-        const next = new Set(prev)
-        next.delete(id)
-        return next
-      })
-    } catch (err) {
-      console.error('Error deleting location:', err)
-    }
-  }
-
-  const handleDeleteAll = async () => {
-    if (!user || locations.length === 0) return
-
-    try {
-      const { error } = await supabase
-        .from('parking_locations')
-        .delete()
-        .eq('user_id', user.id)
-
-      if (error) throw error
-      setLocations([])
-      setSelectedIds(new Set())
-    } catch (err) {
-      console.error('Error deleting all locations:', err)
+      console.error('Error editing location:', err)
     }
   }
 
@@ -179,7 +194,7 @@ export default function App() {
                   <>
                     {selectedIds.size > 0 && (
                       <button
-                        onClick={handleDeleteSelected}
+                        onClick={openBulkDeleteConfirm}
                         className="inline-flex items-center gap-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-semibold px-3 py-2 rounded-lg transition"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -217,10 +232,10 @@ export default function App() {
             </div>
 
             {/* Location list */}
-            <LocationList 
-              locations={locations} 
-              onDelete={handleDelete} 
-              onDeleteAll={handleDeleteAll}
+            <LocationList
+              locations={locations}
+              onDelete={openDeleteConfirm}
+              onEdit={handleEdit}
               isSelectMode={isSelectMode}
               selectedIds={selectedIds}
               onToggleSelect={handleToggleSelect}
@@ -235,6 +250,41 @@ export default function App() {
           onClose={() => setWizardOpen(false)}
           onSave={handleSaveLocation}
         />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteTarget && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={cancelDelete}>
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl" onClick={e => e.stopPropagation()}>
+            <div className="text-center mb-4">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Trash2 className="w-6 h-6 text-red-600" />
+              </div>
+              <h3 className="font-semibold text-slate-800">
+                {deleteTarget === 'single' ? 'Eliminar ubicación' : 'Eliminar ubicaciones'}
+              </h3>
+              <p className="text-sm text-slate-500 mt-1">
+                {deleteTarget === 'single'
+                  ? '¿Estás seguro de que deseas eliminar esta ubicación? Esta acción no se puede deshacer.'
+                  : `¿Estás seguro de que deseas eliminar ${selectedIds.size} ubicación${selectedIds.size > 1 ? 'es' : ''}? Esta acción no se puede deshacer.`}
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={cancelDelete}
+                className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium py-3 rounded-xl transition"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={executeDelete}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium py-3 rounded-xl transition"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

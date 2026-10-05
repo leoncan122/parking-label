@@ -3,3 +3,7 @@
 node_modules
 dist
 
+
+# Artefactos temporales de herramientas
+.hermes-tmp.*
+**/.hermes-tmp.*

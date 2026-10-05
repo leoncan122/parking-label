@@ -1,13 +1,22 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://potehernjpuqwzdmtdwz.supabase.co'
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
-
-const useRuntimeCheck = typeof import.meta !== 'undefined' && import.meta.env?.DEV
-
-if (useRuntimeCheck && !supabaseAnonKey) {
-  console.warn('⚠️ VITE_SUPABASE_ANON_KEY no configurada. Algunas funciones pueden fallar.')
+/**
+ * Sin valores por defecto a propósito: una URL hardcodeada hace que la app
+ * apunte en silencio a un proyecto viejo en vez de fallar de forma visible.
+ */
+function requireEnv(name: 'VITE_SUPABASE_URL' | 'VITE_SUPABASE_ANON_KEY'): string {
+  const value = import.meta.env[name]
+  if (typeof value !== 'string' || !value.trim()) {
+    throw new Error(
+      `[config] Falta la variable de entorno ${name}. ` +
+        'Añádela a tu archivo .env (ver .env.example) y reinicia el servidor de desarrollo.',
+    )
+  }
+  return value.trim()
 }
+
+const supabaseUrl = requireEnv('VITE_SUPABASE_URL')
+const supabaseAnonKey = requireEnv('VITE_SUPABASE_ANON_KEY')
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { describeAuthError } from '../lib/authErrors'
 
 interface AuthScreenProps {
   onLogin: () => void
@@ -27,8 +28,12 @@ export default function AuthScreen({ onLogin }: AuthScreenProps) {
       }
       onLogin()
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Error desconocido'
-      setError(message)
+      setError(
+        describeAuthError(
+          err,
+          isLogin ? 'No se pudo iniciar sesión. Inténtalo de nuevo.' : 'No se pudo crear la cuenta. Inténtalo de nuevo.',
+        ),
+      )
     } finally {
       setLoading(false)
     }
@@ -44,8 +49,7 @@ export default function AuthScreen({ onLogin }: AuthScreenProps) {
       })
       if (error) throw error
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Error desconocido'
-      setError(message)
+      setError(describeAuthError(err, 'No se pudo iniciar sesión con Google. Inténtalo de nuevo.'))
     } finally {
       setLoading(false)
     }
